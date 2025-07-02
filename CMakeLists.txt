@@ -24,6 +24,8 @@ add_executable(2DPhysicsEngine main.cpp
     physics/collision_resolver.h physics/collision_resolver.cpp
     physics/collision_info.h
     physics/convex_polygon_shape2d.h physics/convex_polygon_shape2d.cpp
+    physics/matrix3x3.h physics/matrix3x3.cpp
+    physics/vector3d.h physics/vector3d.cpp
 )
 target_link_libraries(${PROJECT_NAME} raylib)
 
