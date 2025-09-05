@@ -10,6 +10,7 @@ public:
 
     float length() const;
     Vector2D get_unit_vector() const;
+    Vector2D& normalize();
 
     float dot(const Vector2D &vec2d) const;
     Vector2D operator-() const;

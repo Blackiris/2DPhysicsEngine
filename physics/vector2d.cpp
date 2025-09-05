@@ -13,6 +13,13 @@ Vector2D Vector2D::get_unit_vector() const {
     return Vector2D(x/len, y/len);
 }
 
+Vector2D& Vector2D::normalize() {
+    float len = length();
+    x /= len;
+    y /= len;
+    return *this;
+}
+
 float Vector2D::dot(const Vector2D &vec2d) const {
     return x * vec2d.x + y * vec2d.y;
 }
