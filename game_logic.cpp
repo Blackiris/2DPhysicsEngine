@@ -2,7 +2,6 @@
 #include "physics/circleshape2d.h"
 #include "physics/collision_resolver.h"
 #include "physics/convex_polygon_shape2d.h"
-#include "physics/rectangleshape2d.h"
 #include "physics/rigidbody.h"
 #include "physics/staticbody.h"
 #include <iostream>
@@ -18,18 +17,18 @@ int GameLogic::start() {
     RigidBody circleBody(Transform2D(Vector2D(70, 100), 0), circle2D, 10, 0.8);
     circleBody.acc = Vector2D(0, 9.8);
 
-    //RectangleShape2D rectangle2D(100, 10);
-    //StaticBody rectangleStaticBody(Transform2D(Vector2D(50, 300), 0), rectangle2D);
+    ConvexPolygonShape2D squareShape({Vector2D(-50, -50), Vector2D(50, -50), Vector2D(50, 50), Vector2D(-50, 50)});
+    RigidBody squareBody(Transform2D(Vector2D(300, 300), 0), squareShape, 10, 0.8);
+    squareBody.acc = Vector2D(0, 0);
+
 
     StaticBody circleStaticBody(Transform2D(Vector2D(60, 300), 0), circle2D);
 
-
-
-    ConvexPolygonShape2D convex_shape_2D({Vector2D(200, 20), Vector2D(-20, 20), Vector2D(-20, -20), Vector2D(200, -20), Vector2D(450, -50)});
-    StaticBody convex_static_body(Transform2D(Vector2D(200, 300), 0), convex_shape_2D);
+    ConvexPolygonShape2D convex_shape_2D({Vector2D(200, 20), Vector2D(-60, 20), Vector2D(-60, -20), Vector2D(200, -20), Vector2D(450, -10)});
+    StaticBody convex_static_body(Transform2D(Vector2D(200, 300), 0.2), convex_shape_2D);
 
     CollisionResolver collision_resolver;
-    rigids = {&circleBody};
+    rigids = {&circleBody, &squareBody};
     statics = {&circleStaticBody, &convex_static_body};
 
     while(!backend.should_window_closed()) {
@@ -42,6 +41,7 @@ int GameLogic::start() {
         }
 
         display_shapes();
+        convex_static_body.location.rotation_rad -= 0.01;
         backend.end();
     }
     backend.close();

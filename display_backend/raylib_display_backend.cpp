@@ -2,7 +2,6 @@
 
 
 #include "../physics/circleshape2d.h"
-#include "../physics/rectangleshape2d.h"
 #include "../physics/convex_polygon_shape2d.h"
 
 RaylibDisplayBackend::RaylibDisplayBackend() {}
@@ -41,19 +40,15 @@ void RaylibDisplayBackend::display_shape(const Transform2D &location, const Shap
         return;
     }
 
-    const RectangleShape2D* rectangle = dynamic_cast<const RectangleShape2D*>(&shape);
-    if (rectangle != nullptr) {
-        DrawRectanglePro(Rectangle(location.point2d.x, location.point2d.y, rectangle->width, rectangle->height), Vector2(0, 0), 0, DARKBLUE);
-        return;
-    }
-
     const ConvexPolygonShape2D* convex = dynamic_cast<const ConvexPolygonShape2D*>(&shape);
     if (convex != nullptr) {
         std::vector<Vector2> points_rl;
         for (const auto& point: convex->points) {
-            points_rl.emplace_back(Vector2(location.point2d.x+point.x, location.point2d.y+point.y));
+            const Vector2D new_point = location * point;
+            points_rl.emplace_back(Vector2(new_point.x, new_point.y));
         }
-        points_rl.emplace_back(Vector2(location.point2d.x+convex->points[0].x, location.point2d.y+convex->points[0].y));
+        const Vector2D new_point = location * convex->points[0];
+        points_rl.emplace_back(Vector2(new_point.x, new_point.y));
         Vector2* points_array = &points_rl[0];
 
         DrawLineStrip(points_array, points_rl.size(), DARKBLUE);

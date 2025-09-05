@@ -12,6 +12,7 @@ public:
     Vector2D get_unit_vector() const;
 
     float dot(const Vector2D &vec2d) const;
+    Vector2D operator-() const;
     Vector2D operator+(const Vector2D &vec2d) const;
     Vector2D operator-(const Vector2D &vec2d) const;
     Vector2D operator*(const double &coeff) const;

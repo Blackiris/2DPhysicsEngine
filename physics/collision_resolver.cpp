@@ -1,5 +1,7 @@
 #include "collision_resolver.h"
+#include "gjk.h"
 
+#include <algorithm>
 #include <iostream>
 
 CollisionResolver::CollisionResolver() {}
@@ -74,20 +76,6 @@ CollisionInfo CollisionResolver::are_colliding(const PhysicBody &body1, const Ph
         }
     }
 
-    /*void RaylibDisplayBackend::display_shape(const Location &location, const Shape2D &shape) {
-
-        const CircleShape2D* circle = dynamic_cast<const CircleShape2D*>(&shape);
-        if (circle != nullptr) {
-            DrawCircle(location.point2d.x, location.point2d.y, circle->r, DARKBLUE);
-            return;
-        }
-
-        const RectangleShape2D* rectangle = dynamic_cast<const RectangleShape2D*>(&shape);
-        if (rectangle != nullptr) {
-            DrawRectanglePro(Rectangle(location.point2d.x, location.point2d.y, rectangle->width, rectangle->height), Vector2(0, 0), 0, DARKBLUE);
-            return;
-        }
-    }*/
     return {false, Vector2D(0, 0), 0};
 }
 
@@ -162,5 +150,15 @@ CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &lo
 
 CollisionInfo CollisionResolver::are_polys_colliding(const Transform2D &loc1, const ConvexPolygonShape2D &poly1,
                                                      const Transform2D &loc2, const ConvexPolygonShape2D &poly2) {
-    return {false, Vector2D(0, 0), 0};
+    std::vector<Vector2D> new_points1(poly1.points);
+    auto loc1_applier = [&loc1](Vector2D point) {return loc1 * point;};
+    std::transform(new_points1.begin(), new_points1.end(), new_points1.begin(), loc1_applier);
+
+    std::vector<Vector2D> new_points2(poly2.points);
+    auto loc2_applier = [&loc2](Vector2D point) {return loc2 * point;};
+    std::transform(new_points2.begin(), new_points2.end(), new_points2.begin(), loc2_applier);
+
+    ConvexPolygonShape2D poly1_after_transform(new_points1);
+    ConvexPolygonShape2D poly2_after_transform(new_points2);
+    return gjk::are_polys_colliding(poly1_after_transform, poly2_after_transform);
 }

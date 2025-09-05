@@ -17,6 +17,10 @@ float Vector2D::dot(const Vector2D &vec2d) const {
     return x * vec2d.x + y * vec2d.y;
 }
 
+Vector2D Vector2D::operator-() const {
+    return Vector2D(-x, -y);
+}
+
 Vector2D Vector2D::operator+(const Vector2D &vec2d) const {
     Vector2D c3(0, 0);
     c3.x = this->x + vec2d.x;
