@@ -9,6 +9,7 @@ public:
     double x = 0, y = 0;
 
     float length() const;
+    float length_squared() const;
     Vector2D get_unit_vector() const;
     Vector2D& normalize();
 

@@ -11,32 +11,46 @@ struct ClosestSegmentInfo {
     float depth;
 };
 
+struct PointInfo {
+    Vector2D point;
+    int idx;
+};
+
+struct Edge {
+    Vector2D point1;
+    Vector2D point2;
+};
+
 bool same_direction(const Vector2D &v1, const Vector2D &v2) {
     return v1.dot(v2) > 0;
 }
 
-Vector2D get_furthest_point(const ConvexPolygonShape2D &poly, const Vector2D &direction) {
+PointInfo get_furthest_point(const ConvexPolygonShape2D &poly, const Vector2D &direction) {
     Vector2D max_point = poly.points[0];
+    unsigned idx = 0;
     float max_dot = direction.dot(max_point);
 
-    for (auto& point : poly.points | std::views::drop(1)) {
+    for (unsigned i = 1; i < poly.points.size(); ++i) {
+        auto& point = poly.points[i];
         float current_dot = direction.dot(point);
         if (current_dot > max_dot) {
             max_dot = current_dot;
             max_point = point;
+            idx = i;
         }
     }
-    return max_point;
+    return {max_point, idx};
 }
 
 Vector2D get_support(const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2, const Vector2D &direction) {
-    Vector2D point1 = get_furthest_point(poly1, direction);
-    Vector2D point2 = get_furthest_point(poly2, -direction);
-    return point1 - point2;
+    PointInfo point1_info = get_furthest_point(poly1, direction);
+    PointInfo point2_info = get_furthest_point(poly2, -direction);
+    return point1_info.point - point2_info.point;
 }
 
 ClosestSegmentInfo find_closest_segment(const std::vector<Vector2D> &polytope, const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2) {
     Vector2D min_normal{0, 0};
+    Vector2D surface_point{0, 0};
     float min_depth = std::numeric_limits<float>::max();
     unsigned min_index = 0;
 
@@ -61,6 +75,58 @@ ClosestSegmentInfo find_closest_segment(const std::vector<Vector2D> &polytope, c
 
     return {min_index, min_normal, min_depth};
 }
+
+/**
+ * @brief find_furthest_edge
+ * @param poly
+ * @param dir
+ * @return edge, with first point furthest
+ */
+Edge find_furthest_edge(const ConvexPolygonShape2D &poly, const Vector2D &dir) {
+    const PointInfo point1_info = get_furthest_point(poly, dir);
+    const int nb_points = poly.points.size();
+    const Vector2D &prev = poly.points[(point1_info.idx-1+nb_points)%nb_points];
+    const Vector2D &next = poly.points[(point1_info.idx+1)%nb_points];
+
+    Vector2D dir1 = prev - point1_info.point;
+    Vector2D dir2 = next - point1_info.point;
+
+    // Both dot products are negative, take the value closer to 0
+    if (dir.dot(dir1) >= dir.dot(dir2)) {
+        return {point1_info.point, prev};
+    } else {
+        return {point1_info.point, next};
+    }
+}
+
+Vector2D find_collision_point(const ClosestSegmentInfo &min_closest_segment_info, const ConvexPolygonShape2D &poly_a, const ConvexPolygonShape2D &poly_b) {
+    auto dir = min_closest_segment_info.normal;
+    const Edge furthest_edge_a = find_furthest_edge(poly_a, dir);
+    const Edge furthest_edge_b = find_furthest_edge(poly_b, -dir);
+
+    const Vector2D edge_a_dir = (furthest_edge_a.point2 - furthest_edge_a.point1).normalize();
+    const Vector2D edge_b_dir = (furthest_edge_b.point2 - furthest_edge_b.point1).normalize();
+
+    // Select the edge most perpendicular to dir as base, so with dot closer to 0
+    Edge support;
+    Edge to_project;
+    Vector2D dir_support;
+    if (std::abs(edge_a_dir.dot(dir)) >= std::abs(edge_b_dir.dot(dir))) {
+        support = furthest_edge_b;
+        to_project = furthest_edge_a;
+        dir_support = edge_b_dir;
+    } else {
+        support = furthest_edge_a;
+        to_project = furthest_edge_b;
+        dir_support = edge_a_dir;
+    }
+
+
+    // Project
+    const Vector2D project = to_project.point1 - support.point1;
+    return support.point1 + project.dot(dir_support) * dir_support;
+}
+
 
 /**
  * @brief get_collision_info based on EPA algorithm
@@ -89,8 +155,9 @@ CollisionInfo get_collision_info(const std::array<Vector2D, 3> &simplex, const C
         }
     }
 
-
-    return {true, min_closest_segment_info.normal, min_closest_segment_info.depth};
+    return {true, -min_closest_segment_info.normal,
+            find_collision_point(min_closest_segment_info, poly1, poly2) + min_closest_segment_info.normal * min_closest_segment_info.depth,
+            min_closest_segment_info.depth};
 }
 
 CollisionInfo are_polys_colliding(const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2) {
@@ -164,7 +231,7 @@ CollisionInfo are_polys_colliding(const ConvexPolygonShape2D &poly1, const Conve
     if (has_collision) {
         return get_collision_info(simplex, poly1, poly2);
     } else {
-        return {false, Vector2D(0, 0), 0};
+        return {false, Vector2D(0, 0), Vector2D(0, 0), 0};
     }
 }
 

@@ -11,6 +11,8 @@ public:
     ConvexPolygonShape2D(const std::vector<Vector2D> points);
 
     std::vector<Vector2D> points;
+
+    float compute_intertia(const float &mass) const;
 };
 
 #endif // CONVEX_POLYGON_SHAPE2D_H

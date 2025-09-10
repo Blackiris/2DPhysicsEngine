@@ -8,6 +8,10 @@ float Vector2D::length() const {
     return std::sqrt(x*x+y*y);
 }
 
+float Vector2D::length_squared() const {
+    return x*x+y*y;
+}
+
 Vector2D Vector2D::get_unit_vector() const {
     float len = length();
     return Vector2D(x/len, y/len);

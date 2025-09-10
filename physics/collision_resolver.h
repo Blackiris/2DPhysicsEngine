@@ -8,12 +8,14 @@
 #include "rigidbody.h"
 #include "staticbody.h"
 
+#include "../display_backend/backend.h"
+
 #include <list>
 
 class CollisionResolver
 {
 public:
-    CollisionResolver();
+    CollisionResolver(Backend &backend);
     void update_locations(std::list<RigidBody*> &rigid_bodies, std::list<StaticBody*> &static_bodies, const float &dt);
     static CollisionInfo are_colliding(const PhysicBody &body1, const PhysicBody &body2);
 
@@ -24,6 +26,8 @@ private:
                                                const Transform2D &loc2, const ConvexPolygonShape2D &poly2);
     static CollisionInfo are_polys_colliding(const Transform2D &loc1, const ConvexPolygonShape2D &poly1,
                                              const Transform2D &loc2, const ConvexPolygonShape2D &poly2);
+
+    Backend &backend;
 };
 
 #endif // COLLISION_RESOLVER_H

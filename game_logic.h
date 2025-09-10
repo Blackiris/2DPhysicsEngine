@@ -14,6 +14,7 @@ public:
 
 private:
     void display_shapes();
+    void display_collisions();
 
     Backend &backend;
     std::list<RigidBody*> rigids;

@@ -15,6 +15,11 @@ public:
     Vector2D velocity;
     float mass;
 
+    float rotation_speed = 0;
+    float rotation_acc = 0;
+    float inertia;
+
+
     void update_location(float delta_time) override;
     void move(const Vector2D &vectorToNewLocation) override;
 };

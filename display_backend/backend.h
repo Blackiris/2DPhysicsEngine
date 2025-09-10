@@ -13,6 +13,7 @@ public:
     virtual bool should_window_closed() = 0;
     virtual float get_frame_time() = 0;
     virtual void display_shape(const Transform2D &location, const Shape2D &shape) = 0;
+    virtual void display_vector(const Vector2D &origin, const Vector2D &direction) = 0;
 };
 
 #endif // BACKEND_H

@@ -2,9 +2,8 @@
 #include "gjk.h"
 
 #include <algorithm>
-#include <iostream>
 
-CollisionResolver::CollisionResolver() {}
+CollisionResolver::CollisionResolver(Backend &backend) : backend(backend) {}
 
 void CollisionResolver::update_locations(std::list<RigidBody*> &rigid_bodies, std::list<StaticBody*> &static_bodies, const float &dt) {
     for (auto &obj: rigid_bodies) {
@@ -18,13 +17,29 @@ void CollisionResolver::update_locations(std::list<RigidBody*> &rigid_bodies, st
             CollisionInfo collision_info = CollisionResolver::are_colliding(*obj, *other_rigid);
 
             if (collision_info.are_colliding) {
-                float masses_sum = obj->mass + other_rigid->mass;
-                Vector2D velocity_diff = other_rigid->velocity - obj->velocity;
+                backend.display_vector(collision_info.collision_point, collision_info.penetration * collision_info.normal);
 
                 obj->move(collision_info.penetration * collision_info.normal);
 
-                obj->velocity += 2*other_rigid->mass * velocity_diff.dot(collision_info.normal) / masses_sum * collision_info.normal;
-                other_rigid->velocity -= 2*obj->mass * velocity_diff.dot(collision_info.normal) / masses_sum * collision_info.normal;
+                const float e = (obj->elastic_coeff + other_rigid->elastic_coeff) /2;
+                const Vector2D speed_ab = obj->velocity - other_rigid->velocity;
+
+
+                const Vector2D r_to_colpoint = collision_info.collision_point - obj->location.point2d;
+                const Vector2D r_to_colpoint_perp{r_to_colpoint.y, -r_to_colpoint.x};
+                const float r_perp_normal_dot = r_to_colpoint_perp.dot(collision_info.normal);
+
+                const Vector2D r_other_to_colpoint = collision_info.collision_point - other_rigid->location.point2d;
+                const Vector2D r_other_to_colpoint_perp{r_other_to_colpoint.y, -r_other_to_colpoint.x};
+                const float r_other_perp_normal_dot = r_other_to_colpoint_perp.dot(collision_info.normal);
+
+                const float j = - (1+e) * speed_ab.dot(collision_info.normal) /
+                                (1.0/obj->mass + 1.0/other_rigid->mass + r_perp_normal_dot*r_perp_normal_dot/obj->inertia + r_other_perp_normal_dot*r_other_perp_normal_dot/other_rigid->inertia);
+
+                obj->velocity += j/obj->mass * collision_info.normal;
+                //obj->rotation_speed += j * r_perp_normal_dot / obj->inertia;
+
+                other_rigid->velocity -= j/other_rigid->mass * collision_info.normal;
             }
         }
 
@@ -32,10 +47,15 @@ void CollisionResolver::update_locations(std::list<RigidBody*> &rigid_bodies, st
             CollisionInfo collision_info = CollisionResolver::are_colliding(*obj, *other_static);
 
             if (collision_info.are_colliding) {
+                backend.display_vector(collision_info.collision_point, collision_info.normal);
 
                 obj->move(collision_info.penetration * collision_info.normal);
 
-                obj->velocity -= 2 * (obj->elastic_coeff + other_static->elastic_coeff) / 2 * obj->velocity.dot(collision_info.normal) * collision_info.normal;
+                const float e = (obj->elastic_coeff + other_static->elastic_coeff) /2;
+                const Vector2D speed_ab = obj->velocity;
+                const float j = - (1+e) * speed_ab.dot(collision_info.normal) / (1.0/obj->mass);
+
+                obj->velocity += j/obj->mass * collision_info.normal;
             }
         }
     }
@@ -76,7 +96,7 @@ CollisionInfo CollisionResolver::are_colliding(const PhysicBody &body1, const Ph
         }
     }
 
-    return {false, Vector2D(0, 0), 0};
+    return {false, Vector2D(0, 0), Vector2D(0, 0), 0};
 }
 
 
@@ -88,7 +108,8 @@ CollisionInfo CollisionResolver::are_spheres_colliding(const Transform2D &loc1, 
     float circle_radiuses = circle1.r + circle2.r;
     float penetration = circle_radiuses - loc_dist;
 
-    return {penetration > 0, loc_diff.get_unit_vector(), penetration};
+    return {penetration > 0, loc_diff.get_unit_vector(),
+            (loc1.point2d + loc2.point2d) /2, penetration};
 }
 
 CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &loc1, const CircleShape2D &circle1,
@@ -96,6 +117,7 @@ CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &lo
     const unsigned int nb_points = poly2.points.size();
     bool has_collision = false;
     Vector2D normal;
+    Vector2D collision_point;
     float penetration = 0;
 
     for (unsigned int i=0; i<nb_points; i++) {
@@ -116,6 +138,7 @@ CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &lo
                 has_collision = true;
                 normal = seg_to_circle.get_unit_vector();
                 penetration = circle1.r - seg_to_circle_length;
+                collision_point = point1;
             }
         } else if (projection >= segment_length) {
             Vector2D seg_to_circle_2nd = loc1.point2d - point2;
@@ -125,6 +148,7 @@ CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &lo
                 has_collision = true;
                 normal = seg_to_circle_2nd.get_unit_vector();
                 penetration = circle1.r - seg_to_circle_2nd_length;
+                collision_point = point2;
             }
         } else {
             Vector2D middle_point = point1 + projection * unit_vect;
@@ -136,6 +160,7 @@ CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &lo
                 has_collision = true;
                 normal = seg_to_circle_2nd.get_unit_vector();
                 penetration = circle1.r - seg_to_circle_2nd_length;
+                collision_point = middle_point;
             }
         }
 
@@ -144,7 +169,7 @@ CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &lo
         }
     }
 
-    return {has_collision, normal, penetration};
+    return {has_collision, -normal, collision_point, penetration};
 }
 
 

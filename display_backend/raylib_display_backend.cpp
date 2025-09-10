@@ -1,5 +1,5 @@
 #include "raylib_display_backend.h"
-
+#include "raylib.h"
 
 #include "../physics/circleshape2d.h"
 #include "../physics/convex_polygon_shape2d.h"
@@ -36,7 +36,7 @@ void RaylibDisplayBackend::display_shape(const Transform2D &location, const Shap
 
     const CircleShape2D* circle = dynamic_cast<const CircleShape2D*>(&shape);
     if (circle != nullptr) {
-        DrawCircle(location.point2d.x, location.point2d.y, circle->r, DARKBLUE);
+        DrawCircleLines(location.point2d.x, location.point2d.y, circle->r, DARKBLUE);
         return;
     }
 
@@ -55,3 +55,8 @@ void RaylibDisplayBackend::display_shape(const Transform2D &location, const Shap
     }
 }
 
+void RaylibDisplayBackend::display_vector(const Vector2D &origin, const Vector2D &direction) {
+    Vector2D target = origin+direction;
+    DrawCircle(origin.x, origin.y, 5, RED);
+    DrawLineEx(Vector2(origin.x, origin.y), Vector2(target.x, target.y), 3, RED);
+}
