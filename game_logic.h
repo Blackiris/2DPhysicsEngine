@@ -2,11 +2,10 @@
 #define GAME_LOGIC_H
 
 #include "display_backend/backend.h"
-#include "physics/rigidbody.h"
-#include "physics/staticbody.h"
-
+#include "physics/physicbody.h"
 #include <memory>
 #include <vector>
+
 class GameLogic
 {
 public:
@@ -19,8 +18,8 @@ private:
     void init_level();
 
     Backend &backend;
-    std::vector<std::unique_ptr<RigidBody>> rigids;
-    std::vector<std::unique_ptr<StaticBody>> statics;
+    std::vector<std::unique_ptr<PhysicBody>> rigids;
+    std::vector<std::unique_ptr<PhysicBody>> statics;
 };
 
 #endif // GAME_LOGIC_H

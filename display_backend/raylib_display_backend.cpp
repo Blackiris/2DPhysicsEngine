@@ -37,6 +37,9 @@ void RaylibDisplayBackend::display_shape(const Transform2D &location, const Shap
     const CircleShape2D* circle = dynamic_cast<const CircleShape2D*>(&shape);
     if (circle != nullptr) {
         DrawCircleLines(location.point2d.x, location.point2d.y, circle->r, DARKBLUE);
+        DrawLine(location.point2d.x, location.point2d.y,
+                 location.point2d.x + circle->r * std::cos(location.rotation_rad),
+                 location.point2d.y + circle->r * std::sin(location.rotation_rad), DARKBLUE);
         return;
     }
 

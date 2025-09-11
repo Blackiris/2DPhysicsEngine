@@ -6,7 +6,60 @@
 
 CollisionResolver::CollisionResolver(Backend &backend) : backend(backend) {}
 
-void CollisionResolver::update_locations(std::vector<std::unique_ptr<RigidBody>> &rigid_bodies, std::vector<std::unique_ptr<StaticBody>> &static_bodies, const float &dt) {
+void CollisionResolver::solve_collision(PhysicBody* obj, PhysicBody* other_rigid, const CollisionInfo &collision_info) {
+    backend.display_vector(collision_info.collision_point, collision_info.penetration * collision_info.normal);
+
+    obj->move(collision_info.penetration * collision_info.normal);
+
+    const float e = (obj->elastic_coeff + other_rigid->elastic_coeff) /2;
+
+    const Vector2D r_to_colpoint = collision_info.collision_point - obj->location.point2d;
+    const Vector2D r_to_colpoint_perp{r_to_colpoint.y, -r_to_colpoint.x};
+    const float r_perp_normal_dot = r_to_colpoint_perp.dot(collision_info.normal);
+
+    const Vector2D r_other_to_colpoint = collision_info.collision_point - other_rigid->location.point2d;
+    const Vector2D r_other_to_colpoint_perp{r_other_to_colpoint.y, -r_other_to_colpoint.x};
+    const float r_other_perp_normal_dot = r_other_to_colpoint_perp.dot(collision_info.normal);
+
+    const Vector2D speed_ab = obj->velocity - obj->rotation_speed * r_to_colpoint_perp
+                              - (other_rigid->velocity - other_rigid->rotation_speed * r_other_to_colpoint_perp);
+
+    const float j = - (1+e) * speed_ab.dot(collision_info.normal) /
+                    (obj->get_mass_inverse() + other_rigid->get_mass_inverse()
+                     + r_perp_normal_dot*r_perp_normal_dot*obj->get_inertia_inverse()
+                     + r_other_perp_normal_dot*r_other_perp_normal_dot*other_rigid->get_inertia_inverse());
+
+    const Vector2D impulse = j * collision_info.normal;
+
+    obj->apply_impulse(collision_info.collision_point, impulse);
+    other_rigid->apply_impulse(collision_info.collision_point, -impulse);
+
+
+    // Add friction
+    const float average_static_friction = (obj->static_friction + other_rigid->static_friction) / 2;
+    const float average_dync_friction = (obj->dynamic_friction + other_rigid->dynamic_friction) / 2;
+    Vector2D tangent = speed_ab - speed_ab.dot(collision_info.normal) * collision_info.normal;
+
+    if (tangent.length() <= 0.001) {
+        return;
+    }
+    tangent.normalize();
+    const float jt = -speed_ab.dot(tangent);
+
+    float final_jt = jt;
+    if (std::abs(jt) > j * average_static_friction) {
+        final_jt = j * average_dync_friction;
+    }
+
+    const Vector2D impulse_friction = final_jt * tangent;
+    backend.display_vector(collision_info.collision_point, impulse_friction);
+
+    obj->apply_impulse(collision_info.collision_point, impulse_friction);
+    other_rigid->apply_impulse(collision_info.collision_point, -impulse_friction);
+}
+
+
+void CollisionResolver::update_locations(std::vector<std::unique_ptr<PhysicBody>> &rigid_bodies, std::vector<std::unique_ptr<PhysicBody>> &static_bodies, const float &dt) {
     for (auto &obj: rigid_bodies) {
         obj->update_location(dt);
 
@@ -18,54 +71,7 @@ void CollisionResolver::update_locations(std::vector<std::unique_ptr<RigidBody>>
             CollisionInfo collision_info = CollisionResolver::are_colliding(*obj, *other_rigid);
 
             if (collision_info.are_colliding) {
-                backend.display_vector(collision_info.collision_point, collision_info.penetration * collision_info.normal);
-
-                obj->move(collision_info.penetration * collision_info.normal);
-
-                const float e = (obj->elastic_coeff + other_rigid->elastic_coeff) /2;
-
-                const Vector2D r_to_colpoint = collision_info.collision_point - obj->location.point2d;
-                const Vector2D r_to_colpoint_perp{r_to_colpoint.y, -r_to_colpoint.x};
-                const float r_perp_normal_dot = r_to_colpoint_perp.dot(collision_info.normal);
-
-                const Vector2D r_other_to_colpoint = collision_info.collision_point - other_rigid->location.point2d;
-                const Vector2D r_other_to_colpoint_perp{r_other_to_colpoint.y, -r_other_to_colpoint.x};
-                const float r_other_perp_normal_dot = r_other_to_colpoint_perp.dot(collision_info.normal);
-
-                const Vector2D speed_ab = obj->velocity - obj->rotation_speed * r_to_colpoint_perp
-                                          - (other_rigid->velocity - other_rigid->rotation_speed * r_other_to_colpoint_perp);
-
-                const float j = - (1+e) * speed_ab.dot(collision_info.normal) /
-                                (obj->get_mass_inverse() + other_rigid->get_mass_inverse()
-                                    + r_perp_normal_dot*r_perp_normal_dot*obj->get_inertia_inverse()
-                                    + r_other_perp_normal_dot*r_other_perp_normal_dot*other_rigid->get_inertia_inverse());
-
-                const Vector2D impulse = j * collision_info.normal;
-
-                obj->apply_impulse(collision_info.collision_point, impulse);
-                other_rigid->apply_impulse(collision_info.collision_point, -impulse);
-
-
-                // Add friction
-                const float average_static_friction = (obj->static_friction + other_rigid->static_friction) / 2;
-                const float average_dync_friction = (obj->dynamic_friction + other_rigid->dynamic_friction) / 2;
-                Vector2D tangent = speed_ab - speed_ab.dot(collision_info.normal) * collision_info.normal;
-
-                if (tangent.length() <= 0.001) {
-                    continue;
-                }
-                tangent.normalize();
-                const float jt = -speed_ab.dot(tangent);
-
-                float final_jt = jt;
-                if (std::abs(jt) > j * average_static_friction) {
-                    final_jt = j * average_dync_friction;
-                }
-
-                const Vector2D impulse_friction = final_jt * tangent;
-                backend.display_vector(collision_info.collision_point, impulse_friction);
-
-                obj->apply_impulse(collision_info.collision_point, impulse_friction);
+                solve_collision(obj.get(), other_rigid.get(), collision_info);
             }
         }
 
@@ -73,47 +79,7 @@ void CollisionResolver::update_locations(std::vector<std::unique_ptr<RigidBody>>
             CollisionInfo collision_info = CollisionResolver::are_colliding(*obj, *other_static);
 
             if (collision_info.are_colliding) {
-                backend.display_vector(collision_info.collision_point, collision_info.normal);
-
-                obj->move(collision_info.penetration * collision_info.normal);
-
-                const float e = (obj->elastic_coeff + other_static->elastic_coeff) /2;
-
-                const Vector2D r_to_colpoint = collision_info.collision_point - obj->location.point2d;
-                const Vector2D r_to_colpoint_perp{r_to_colpoint.y, -r_to_colpoint.x};
-                const float r_perp_normal_dot = r_to_colpoint_perp.dot(collision_info.normal);
-
-
-                const Vector2D speed_ab = obj->velocity - obj->rotation_speed * r_to_colpoint_perp;
-
-                const float j = - (1+e) * speed_ab.dot(collision_info.normal) /
-                                (obj->get_mass_inverse() + r_perp_normal_dot*r_perp_normal_dot*obj->get_inertia_inverse());
-
-                const Vector2D impulse = j * collision_info.normal;
-                obj->apply_impulse(collision_info.collision_point, impulse);
-
-
-                // Add friction
-                const float average_static_friction = (obj->static_friction + other_static->static_friction) / 2;
-                const float average_dync_friction = (obj->dynamic_friction + other_static->dynamic_friction) / 2;
-                Vector2D tangent = speed_ab - speed_ab.dot(collision_info.normal) * collision_info.normal;
-
-                if (tangent.length() <= 0.001) {
-                    continue;
-                }
-                tangent.normalize();
-                const float jt = -speed_ab.dot(tangent);
-
-                float final_jt = jt;
-                if (std::abs(jt) > j * average_static_friction) {
-                    final_jt = j * average_dync_friction;
-                }
-
-                const Vector2D impulse_friction = final_jt * tangent;
-                backend.display_vector(collision_info.collision_point, impulse_friction);
-
-                obj->apply_impulse(collision_info.collision_point, impulse_friction);
-
+                solve_collision(obj.get(), other_static.get(), collision_info);
             }
         }
     }
