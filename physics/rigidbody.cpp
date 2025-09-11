@@ -29,3 +29,15 @@ void RigidBody::apply_impulse(const Vector2D &application_point, const Vector2D 
     velocity += impulse/mass;
     rotation_speed -= r_to_colpoint_perp.dot(impulse) / inertia;
 }
+
+float RigidBody::get_mass() const noexcept {
+    return mass;
+}
+
+float RigidBody::get_mass_inverse() const noexcept {
+    return 1.0 / mass;
+}
+
+float RigidBody::get_inertia_inverse() const noexcept {
+    return 1.0 / inertia;
+}

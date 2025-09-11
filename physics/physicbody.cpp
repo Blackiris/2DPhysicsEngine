@@ -14,3 +14,15 @@ void PhysicBody::update_location(const float &delta_time) {
 void PhysicBody::apply_impulse(const Vector2D &application_point, const Vector2D &impulse) {
     // Do nothing
 }
+
+float PhysicBody::get_mass() const noexcept {
+    return 0.0;
+}
+
+float PhysicBody::get_mass_inverse() const noexcept {
+    return 0.0;
+}
+
+float PhysicBody::get_inertia_inverse() const noexcept {
+    return 0.0;
+}
