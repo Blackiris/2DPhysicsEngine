@@ -53,6 +53,25 @@ int GameLogic::start() {
 
     while (!backend.should_window_closed()) {
         backend.begin();
+
+        Vector2D mouse_pos = { -100.0f, -100.0f };
+
+        mouse_pos = backend.get_mouse_pos();
+        if (backend.is_mouse_button_pressed(MouseButtonName::MOUSE_LEFT)) {
+            auto circle2D = std::make_shared<CircleShape2D>(30);
+            auto circleBody1 = std::make_unique<RigidBody>(Transform2D(mouse_pos, 0), circle2D, 10, 0.8);
+            circleBody1->acc = Vector2D(0, 5);
+            rigids.push_back(std::move(circleBody1));
+        }
+
+        if (backend.is_mouse_button_pressed(MouseButtonName::MOUSE_RIGHT)) {
+            auto squareShape = std::make_shared<ConvexPolygonShape2D>(std::initializer_list<Vector2D>({Vector2D(-50, -50), Vector2D(50, -50), Vector2D(50, 50), Vector2D(-50, 50)}));
+            auto squareBody = std::make_unique<RigidBody>(Transform2D(mouse_pos, 0), squareShape, 50, 0.5);
+            squareBody->acc = Vector2D(0, 5);
+            rigids.push_back(std::move(squareBody));
+        }
+
+
         const double delta_time = backend.get_frame_time();
         const double physics_delta_time = delta_time / physics_nb_sub_steps;
 

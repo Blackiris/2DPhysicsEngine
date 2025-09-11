@@ -38,11 +38,10 @@ void CollisionResolver::update_locations(std::vector<std::unique_ptr<RigidBody>>
                 const float j = - (1+e) * speed_ab.dot(collision_info.normal) /
                                 (1.0/obj->mass + 1.0/other_rigid->mass + r_perp_normal_dot*r_perp_normal_dot/obj->inertia + r_other_perp_normal_dot*r_other_perp_normal_dot/other_rigid->inertia);
 
-                obj->velocity += j/obj->mass * collision_info.normal;
-                obj->rotation_speed -= j * r_perp_normal_dot / obj->inertia;
+                const Vector2D impulse = j * collision_info.normal;
 
-                other_rigid->velocity -= j/other_rigid->mass * collision_info.normal;
-                other_rigid->rotation_speed -= j * r_other_perp_normal_dot / other_rigid->inertia;
+                obj->apply_impulse(collision_info.collision_point, impulse);
+                other_rigid->apply_impulse(collision_info.collision_point, -impulse);
             }
         }
 
@@ -67,9 +66,7 @@ void CollisionResolver::update_locations(std::vector<std::unique_ptr<RigidBody>>
                                 (1.0/obj->mass + r_perp_normal_dot*r_perp_normal_dot/obj->inertia);
 
                 const Vector2D impulse = j * collision_info.normal;
-
-                obj->velocity += impulse/obj->mass;
-                obj->rotation_speed -= r_to_colpoint_perp.dot(impulse) / obj->inertia;
+                obj->apply_impulse(collision_info.collision_point, impulse);
 
 
                 // Add friction
@@ -91,8 +88,7 @@ void CollisionResolver::update_locations(std::vector<std::unique_ptr<RigidBody>>
                 const Vector2D impulse_friction = final_jt * tangent;
                 backend.display_vector(collision_info.collision_point, impulse_friction);
 
-                obj->velocity += impulse_friction/obj->mass;
-                obj->rotation_speed -= r_to_colpoint_perp.dot(impulse_friction) / obj->inertia;
+                obj->apply_impulse(collision_info.collision_point, impulse_friction);
 
             }
         }

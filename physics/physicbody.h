@@ -16,8 +16,9 @@ public:
     float static_friction = 0.6;
     float dynamic_friction = 0.5;
 
-    virtual void update_location(float delta_time);
+    virtual void update_location(const float &delta_time);
     virtual void move(const Vector2D &vectorToNewLocation);
+    virtual void apply_impulse(const Vector2D &application_point, const Vector2D &impulse);
 
 };
 

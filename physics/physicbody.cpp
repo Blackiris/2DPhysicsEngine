@@ -7,6 +7,10 @@ void PhysicBody::move(const Vector2D &vectorToNewLocation) {
     // Do nothing
 }
 
-void PhysicBody::update_location(float delta_time) {
+void PhysicBody::update_location(const float &delta_time) {
+    // Do nothing
+}
+
+void PhysicBody::apply_impulse(const Vector2D &application_point, const Vector2D &impulse) {
     // Do nothing
 }

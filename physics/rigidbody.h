@@ -20,8 +20,9 @@ public:
     float inertia;
 
 
-    void update_location(float delta_time) override;
+    void update_location(const float &delta_time) override;
     void move(const Vector2D &vectorToNewLocation) override;
+    void apply_impulse(const Vector2D &application_point, const Vector2D &impulse) override;
 };
 
 #endif // RIGIDBODY_H

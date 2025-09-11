@@ -60,3 +60,22 @@ void RaylibDisplayBackend::display_vector(const Vector2D &origin, const Vector2D
     DrawCircle(origin.x, origin.y, 5, RED);
     DrawLineEx(Vector2(origin.x, origin.y), Vector2(target.x, target.y), 3, RED);
 }
+
+Vector2D RaylibDisplayBackend::get_mouse_pos() const {
+    Vector2 pos = GetMousePosition();
+    return Vector2D{pos.x, pos.y};
+}
+
+bool RaylibDisplayBackend::is_mouse_button_pressed(const MouseButtonName &button_name) const {
+    MouseButton rl_mouse_button;
+    switch (button_name) {
+    case MouseButtonName::MOUSE_LEFT:
+        rl_mouse_button = MOUSE_BUTTON_LEFT;
+        break;
+    case MouseButtonName::MOUSE_RIGHT:
+        rl_mouse_button = MOUSE_BUTTON_RIGHT;
+        break;
+    }
+
+    return IsMouseButtonPressed(rl_mouse_button);
+}
