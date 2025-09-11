@@ -6,7 +6,7 @@
 class StaticBody : public PhysicBody
 {
 public:
-    StaticBody(const Transform2D &location, const Shape2D &shape);
+    StaticBody(const Transform2D &location, const std::shared_ptr<Shape2D> shape);
 };
 
 #endif // STATICBODY_H

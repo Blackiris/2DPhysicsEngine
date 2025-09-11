@@ -10,13 +10,14 @@
 
 #include "../display_backend/backend.h"
 
-#include <list>
+#include <vector>
+#include <memory>
 
 class CollisionResolver
 {
 public:
     CollisionResolver(Backend &backend);
-    void update_locations(std::list<RigidBody*> &rigid_bodies, std::list<StaticBody*> &static_bodies, const float &dt);
+    void update_locations(std::vector<std::unique_ptr<RigidBody>> &rigid_bodies, std::vector<std::unique_ptr<StaticBody>> &static_bodies, const float &dt);
     static CollisionInfo are_colliding(const PhysicBody &body1, const PhysicBody &body2);
 
 private:

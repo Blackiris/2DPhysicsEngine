@@ -12,7 +12,7 @@ public:
 
     std::vector<Vector2D> points;
 
-    float compute_intertia(const float &mass) const;
+    float compute_inertia(const float &mass) const;
 };
 
 #endif // CONVEX_POLYGON_SHAPE2D_H

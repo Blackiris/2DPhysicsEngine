@@ -8,7 +8,7 @@
 class RigidBody : public PhysicBody
 {
 public:
-    RigidBody(const Transform2D &location, const Shape2D &shape, const float &mass, const float &elastic_coeff);
+    RigidBody(const Transform2D &location, const std::shared_ptr<Shape2D>shape, const float &mass, const float &elastic_coeff);
 
     Transform2D location_old;
     Vector2D acc;

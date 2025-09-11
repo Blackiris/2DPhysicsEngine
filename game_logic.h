@@ -5,7 +5,8 @@
 #include "physics/rigidbody.h"
 #include "physics/staticbody.h"
 
-#include <list>
+#include <memory>
+#include <vector>
 class GameLogic
 {
 public:
@@ -15,10 +16,11 @@ public:
 private:
     void display_shapes();
     void display_collisions();
+    void init_level();
 
     Backend &backend;
-    std::list<RigidBody*> rigids;
-    std::list<StaticBody*> statics;
+    std::vector<std::unique_ptr<RigidBody>> rigids;
+    std::vector<std::unique_ptr<StaticBody>> statics;
 };
 
 #endif // GAME_LOGIC_H

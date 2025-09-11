@@ -2,10 +2,11 @@
 #include "gjk.h"
 
 #include <algorithm>
+#include <memory>
 
 CollisionResolver::CollisionResolver(Backend &backend) : backend(backend) {}
 
-void CollisionResolver::update_locations(std::list<RigidBody*> &rigid_bodies, std::list<StaticBody*> &static_bodies, const float &dt) {
+void CollisionResolver::update_locations(std::vector<std::unique_ptr<RigidBody>> &rigid_bodies, std::vector<std::unique_ptr<StaticBody>> &static_bodies, const float &dt) {
     for (auto &obj: rigid_bodies) {
         obj->update_location(dt);
 
@@ -22,8 +23,6 @@ void CollisionResolver::update_locations(std::list<RigidBody*> &rigid_bodies, st
                 obj->move(collision_info.penetration * collision_info.normal);
 
                 const float e = (obj->elastic_coeff + other_rigid->elastic_coeff) /2;
-                const Vector2D speed_ab = obj->velocity - other_rigid->velocity;
-
 
                 const Vector2D r_to_colpoint = collision_info.collision_point - obj->location.point2d;
                 const Vector2D r_to_colpoint_perp{r_to_colpoint.y, -r_to_colpoint.x};
@@ -33,13 +32,17 @@ void CollisionResolver::update_locations(std::list<RigidBody*> &rigid_bodies, st
                 const Vector2D r_other_to_colpoint_perp{r_other_to_colpoint.y, -r_other_to_colpoint.x};
                 const float r_other_perp_normal_dot = r_other_to_colpoint_perp.dot(collision_info.normal);
 
+                const Vector2D speed_ab = obj->velocity - obj->rotation_speed * r_to_colpoint_perp
+                                          - (other_rigid->velocity - other_rigid->rotation_speed * r_other_to_colpoint_perp);
+
                 const float j = - (1+e) * speed_ab.dot(collision_info.normal) /
                                 (1.0/obj->mass + 1.0/other_rigid->mass + r_perp_normal_dot*r_perp_normal_dot/obj->inertia + r_other_perp_normal_dot*r_other_perp_normal_dot/other_rigid->inertia);
 
                 obj->velocity += j/obj->mass * collision_info.normal;
-                //obj->rotation_speed += j * r_perp_normal_dot / obj->inertia;
+                obj->rotation_speed -= j * r_perp_normal_dot / obj->inertia;
 
                 other_rigid->velocity -= j/other_rigid->mass * collision_info.normal;
+                other_rigid->rotation_speed -= j * r_other_perp_normal_dot / other_rigid->inertia;
             }
         }
 
@@ -52,10 +55,45 @@ void CollisionResolver::update_locations(std::list<RigidBody*> &rigid_bodies, st
                 obj->move(collision_info.penetration * collision_info.normal);
 
                 const float e = (obj->elastic_coeff + other_static->elastic_coeff) /2;
-                const Vector2D speed_ab = obj->velocity;
-                const float j = - (1+e) * speed_ab.dot(collision_info.normal) / (1.0/obj->mass);
 
-                obj->velocity += j/obj->mass * collision_info.normal;
+                const Vector2D r_to_colpoint = collision_info.collision_point - obj->location.point2d;
+                const Vector2D r_to_colpoint_perp{r_to_colpoint.y, -r_to_colpoint.x};
+                const float r_perp_normal_dot = r_to_colpoint_perp.dot(collision_info.normal);
+
+
+                const Vector2D speed_ab = obj->velocity - obj->rotation_speed * r_to_colpoint_perp;
+
+                const float j = - (1+e) * speed_ab.dot(collision_info.normal) /
+                                (1.0/obj->mass + r_perp_normal_dot*r_perp_normal_dot/obj->inertia);
+
+                const Vector2D impulse = j * collision_info.normal;
+
+                obj->velocity += impulse/obj->mass;
+                obj->rotation_speed -= r_to_colpoint_perp.dot(impulse) / obj->inertia;
+
+
+                // Add friction
+                const float average_static_friction = (obj->static_friction + other_static->static_friction) / 2;
+                const float average_dync_friction = (obj->dynamic_friction + other_static->dynamic_friction) / 2;
+                Vector2D tangent = speed_ab - speed_ab.dot(collision_info.normal) * collision_info.normal;
+
+                if (tangent.length() <= 0.001) {
+                    continue;
+                }
+                tangent.normalize();
+                const float jt = -speed_ab.dot(tangent);
+
+                float final_jt = jt;
+                if (std::abs(jt) > j * average_static_friction) {
+                    final_jt = j * average_dync_friction;
+                }
+
+                const Vector2D impulse_friction = final_jt * tangent;
+                backend.display_vector(collision_info.collision_point, impulse_friction);
+
+                obj->velocity += impulse_friction/obj->mass;
+                obj->rotation_speed -= r_to_colpoint_perp.dot(impulse_friction) / obj->inertia;
+
             }
         }
     }
@@ -64,10 +102,10 @@ void CollisionResolver::update_locations(std::list<RigidBody*> &rigid_bodies, st
 CollisionInfo CollisionResolver::are_colliding(const PhysicBody &body1, const PhysicBody &body2) {
 
     const Transform2D &location1 = body1.location;
-    const Shape2D &shape1 = body1.shape;
+    const Shape2D &shape1 = *body1.shape;
 
     const Transform2D &location2 = body2.location;
-    const Shape2D &shape2 = body2.shape;
+    const Shape2D &shape2 = *body2.shape;
 
 
     const CircleShape2D* circle1 = dynamic_cast<const CircleShape2D*>(&shape1);
@@ -86,7 +124,8 @@ CollisionInfo CollisionResolver::are_colliding(const PhysicBody &body1, const Ph
         if (poly1 != nullptr) {
             const CircleShape2D* circle2 = dynamic_cast<const CircleShape2D*>(&shape2);
             if (circle2 != nullptr) {
-                return are_sphere_poly_colliding(location2, *circle2, location1, *poly1);
+                CollisionInfo coll_info = are_sphere_poly_colliding(location2, *circle2, location1, *poly1);
+                return {coll_info.are_colliding, -coll_info.normal, coll_info.collision_point, coll_info.penetration};
             }
 
             const ConvexPolygonShape2D* poly2 = dynamic_cast<const ConvexPolygonShape2D*>(&shape2);
@@ -169,7 +208,7 @@ CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &lo
         }
     }
 
-    return {has_collision, -normal, collision_point, penetration};
+    return {has_collision, normal, collision_point, penetration};
 }
 
 

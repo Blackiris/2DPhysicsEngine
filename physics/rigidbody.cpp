@@ -1,8 +1,8 @@
 #include "rigidbody.h"
 
-RigidBody::RigidBody(const Transform2D &location, const Shape2D &shape, const float &mass, const float &elastic_coeff):
+RigidBody::RigidBody(const Transform2D &location, const std::shared_ptr<Shape2D> shape, const float &mass, const float &elastic_coeff):
     PhysicBody(location, shape, elastic_coeff), location_old(location), mass(mass) {
-    inertia = shape.compute_intertia(mass);
+    inertia = shape->compute_inertia(mass);
 }
 
 
