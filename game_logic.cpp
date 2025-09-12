@@ -19,7 +19,7 @@ void GameLogic::init_level() {
     circle_body1->acc = Vector2D(0, 9.8);
     auto circle_body2 = std::make_unique<RigidBody>(Transform2D(Vector2D(300, 350), 0), circle_shape, 30, 0.8);
 
-    auto square_shape = std::make_shared<ConvexPolygonShape2D>(std::initializer_list<Vector2D>({Vector2D(-40, -50), Vector2D(30, -50), Vector2D(60, 60), Vector2D(-50, 50)}));
+    auto square_shape = std::make_shared<ConvexPolygonShape2D>(std::initializer_list<Vector2D>({Vector2D(-40, -50), Vector2D(30, -50), Vector2D(60, 60), Vector2D(0, 70), Vector2D(-50, 50)}));
     auto square_body = std::make_unique<RigidBody>(Transform2D(Vector2D(500, 450), 0), square_shape, 50, 0.5);
     auto square_body2 = std::make_unique<RigidBody>(Transform2D(Vector2D(190, 250), 0), square_shape, 12, 0.8);
     square_body->acc = Vector2D(0, 9.8);
@@ -27,17 +27,23 @@ void GameLogic::init_level() {
     square_body->dynamic_friction = 0.9;
     square_body->static_friction = 1;
 
-
-    auto convex_shape_2D = std::make_shared<ConvexPolygonShape2D>(std::initializer_list<Vector2D>({Vector2D(200, 50), Vector2D(-60, 50), Vector2D(-60, -20), Vector2D(200, -20), Vector2D(550, -10)}));
-
     rigids.push_back(std::move(circle_body1));
     rigids.push_back(std::move(circle_body2));
     rigids.push_back(std::move(square_body));
     rigids.push_back(std::move(square_body2));
 
+    auto convex_shape_2D = std::make_shared<ConvexPolygonShape2D>(std::initializer_list<Vector2D>({Vector2D(200, 50), Vector2D(-60, 50), Vector2D(-60, -20), Vector2D(200, -20), Vector2D(550, -10)}));
+
     rigids.push_back(std::make_unique<StaticBody>(Transform2D(Vector2D(60, 250), 0), circle_shape));
     rigids.push_back(std::make_unique<StaticBody>(Transform2D(Vector2D(350, 650), -0.10), convex_shape_2D));
     rigids.push_back(std::make_unique<StaticBody>(Transform2D(Vector2D(50, 400), 0.20), convex_shape_2D));
+
+
+    auto rect_shape = std::make_shared<ConvexPolygonShape2D>(std::initializer_list<Vector2D>({Vector2D(-90, -15), Vector2D(90, -15), Vector2D(90, 15), Vector2D(-90, 15)}));
+    auto rect_body = std::make_unique<RigidBody>(Transform2D(Vector2D(800, 550), 0), rect_shape, 50, 0.5);
+    rect_body->rotation_speed = -0.8;
+    rect_body->is_kinematic = true;
+    rigids.push_back(std::move(rect_body));
 }
 
 void display_help() {

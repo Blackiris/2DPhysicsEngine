@@ -12,11 +12,12 @@ private:
 public:
     RigidBody(const Transform2D &location, const std::shared_ptr<Shape2D>shape, const float &mass, const float &elastic_coeff);
 
-    Transform2D location_old;
     Vector2D acc{0, 0};
 
     float rotation_acc = 0;
     float inertia;
+
+    bool is_kinematic = false;
 
 
     void update_location(const float &delta_time) override;
@@ -25,7 +26,7 @@ public:
     float get_mass() const noexcept override;
     float get_mass_inverse() const noexcept override;
 
-    float get_inertia_inverse() const noexcept;
+    float get_inertia_inverse() const noexcept override;
 };
 
 #endif // RIGIDBODY_H
