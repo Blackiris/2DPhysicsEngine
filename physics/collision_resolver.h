@@ -15,7 +15,7 @@ class CollisionResolver
 {
 public:
     CollisionResolver(Backend &backend);
-    void update_locations(std::vector<std::unique_ptr<PhysicBody>> &rigid_bodies, std::vector<std::unique_ptr<PhysicBody>> &static_bodies, const float &dt);
+    void update_locations(std::vector<std::unique_ptr<PhysicBody>> &physic_bodies, const float &dt);
     static CollisionInfo are_colliding(const PhysicBody &body1, const PhysicBody &body2);
 
 private:

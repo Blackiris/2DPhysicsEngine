@@ -1,5 +1,6 @@
 #include "collision_resolver.h"
 #include "gjk.h"
+#include "rigidbody.h"
 
 #include <algorithm>
 #include <memory>
@@ -59,27 +60,25 @@ void CollisionResolver::solve_collision(PhysicBody* obj, PhysicBody* other_rigid
 }
 
 
-void CollisionResolver::update_locations(std::vector<std::unique_ptr<PhysicBody>> &rigid_bodies, std::vector<std::unique_ptr<PhysicBody>> &static_bodies, const float &dt) {
-    for (auto &obj: rigid_bodies) {
-        obj->update_location(dt);
+void CollisionResolver::update_locations(std::vector<std::unique_ptr<PhysicBody>> &physic_bodies, const float &dt) {
 
-        for (auto &other_rigid: rigid_bodies) {
-            if (obj == other_rigid) {
-                break;
-            }
-
-            CollisionInfo collision_info = CollisionResolver::are_colliding(*obj, *other_rigid);
-
-            if (collision_info.are_colliding) {
-                solve_collision(obj.get(), other_rigid.get(), collision_info);
-            }
+    for (auto &obj: physic_bodies) {
+        const RigidBody* rigid_body = dynamic_cast<const RigidBody*>(obj.get());
+        if (rigid_body == nullptr) {
+            continue;
         }
 
-        for (auto &other_static: static_bodies) {
-            CollisionInfo collision_info = CollisionResolver::are_colliding(*obj, *other_static);
+        obj->update_location(dt);
+
+        for (auto &other_obj: physic_bodies) {
+            if (obj == other_obj) {
+                continue;
+            }
+
+            CollisionInfo collision_info = CollisionResolver::are_colliding(*obj, *other_obj);
 
             if (collision_info.are_colliding) {
-                solve_collision(obj.get(), other_static.get(), collision_info);
+                solve_collision(obj.get(), other_obj.get(), collision_info);
             }
         }
     }

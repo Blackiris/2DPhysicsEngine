@@ -19,7 +19,6 @@ private:
 
     Backend &backend;
     std::vector<std::unique_ptr<PhysicBody>> rigids;
-    std::vector<std::unique_ptr<PhysicBody>> statics;
 };
 
 #endif // GAME_LOGIC_H
