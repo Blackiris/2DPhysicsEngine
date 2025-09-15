@@ -9,9 +9,6 @@
 
 GameLogic::GameLogic(Backend &backend): backend(backend) {}
 
-struct Level {
-
-};
 
 void GameLogic::init_level() {
     auto circle_shape = std::make_shared<CircleShape2D>(30);

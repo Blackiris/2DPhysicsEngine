@@ -8,7 +8,7 @@ RaylibDisplayBackend::RaylibDisplayBackend() {}
 
 void RaylibDisplayBackend::init(const int &screen_width, const int &screen_height) {
     InitWindow(screen_width, screen_height, "2D Physics");
-    SetTargetFPS(30);
+    SetTargetFPS(60);
 }
 
 void RaylibDisplayBackend::begin() {
