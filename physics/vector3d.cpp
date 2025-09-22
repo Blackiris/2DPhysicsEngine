@@ -22,7 +22,7 @@ Vector3D Vector3D::operator+(const Vector3D &vec3d) const {
 }
 
 float Vector3D::length() const {
-    return std::sqrt(x*x+y*y);
+    return std::sqrt(x*x+y*y+z*z);
 }
 
 
