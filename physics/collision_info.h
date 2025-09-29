@@ -4,7 +4,6 @@
 #include "vector2d.h"
 
 struct CollisionInfo {
-    bool are_colliding;
     Vector2D normal;
     Vector2D collision_point;
     float penetration;

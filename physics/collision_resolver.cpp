@@ -75,16 +75,16 @@ void CollisionResolver::update_locations(std::vector<std::unique_ptr<PhysicBody>
                 continue;
             }
 
-            CollisionInfo collision_info = CollisionResolver::are_colliding(*obj, *other_obj);
+            std::optional<CollisionInfo> collision_info = CollisionResolver::are_colliding(*obj, *other_obj);
 
-            if (collision_info.are_colliding) {
-                solve_collision(obj.get(), other_obj.get(), collision_info);
+            if (collision_info.has_value()) {
+                solve_collision(obj.get(), other_obj.get(), collision_info.value());
             }
         }
     }
 }
 
-CollisionInfo CollisionResolver::are_colliding(const PhysicBody &body1, const PhysicBody &body2) {
+std::optional<CollisionInfo> CollisionResolver::are_colliding(const PhysicBody &body1, const PhysicBody &body2) {
 
     const Transform2D &location1 = body1.location;
     const Shape2D &shape1 = *body1.shape;
@@ -109,8 +109,8 @@ CollisionInfo CollisionResolver::are_colliding(const PhysicBody &body1, const Ph
         if (poly1 != nullptr) {
             const CircleShape2D* circle2 = dynamic_cast<const CircleShape2D*>(&shape2);
             if (circle2 != nullptr) {
-                CollisionInfo coll_info = are_sphere_poly_colliding(location2, *circle2, location1, *poly1);
-                return {coll_info.are_colliding, -coll_info.normal, coll_info.collision_point, coll_info.penetration};
+                std::optional<CollisionInfo> coll_info = are_sphere_poly_colliding(location2, *circle2, location1, *poly1);
+                return coll_info.has_value() ? std::make_optional<CollisionInfo>({-coll_info->normal, coll_info->collision_point, coll_info->penetration}) : std::nullopt;
             }
 
             const ConvexPolygonShape2D* poly2 = dynamic_cast<const ConvexPolygonShape2D*>(&shape2);
@@ -120,23 +120,23 @@ CollisionInfo CollisionResolver::are_colliding(const PhysicBody &body1, const Ph
         }
     }
 
-    return {false, Vector2D(0, 0), Vector2D(0, 0), 0};
+    return std::nullopt;
 }
 
 
 
-CollisionInfo CollisionResolver::are_spheres_colliding(const Transform2D &loc1, const CircleShape2D &circle1,
+std::optional<CollisionInfo> CollisionResolver::are_spheres_colliding(const Transform2D &loc1, const CircleShape2D &circle1,
                                 const Transform2D &loc2, const CircleShape2D &circle2) {
     Vector2D loc_diff = loc1.point2d - loc2.point2d;
     float loc_dist = loc_diff.length();
     float circle_radiuses = circle1.r + circle2.r;
     float penetration = circle_radiuses - loc_dist;
 
-    return {penetration > 0, loc_diff.get_unit_vector(),
-            (loc1.point2d + loc2.point2d) /2, penetration};
+    return penetration > 0 ? std::make_optional<CollisionInfo>({loc_diff.get_unit_vector(),
+            (loc1.point2d + loc2.point2d) /2, penetration}) : std::nullopt;
 }
 
-CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &loc1, const CircleShape2D &circle1,
+std::optional<CollisionInfo> CollisionResolver::are_sphere_poly_colliding(const Transform2D &loc1, const CircleShape2D &circle1,
                                                const Transform2D &loc2, const ConvexPolygonShape2D &poly2) {
     const unsigned int nb_points = poly2.points.size();
     bool has_collision = false;
@@ -193,11 +193,11 @@ CollisionInfo CollisionResolver::are_sphere_poly_colliding(const Transform2D &lo
         }
     }
 
-    return {has_collision, normal, collision_point, penetration};
+    return has_collision ? std::make_optional<CollisionInfo>({normal, collision_point, penetration}) : std::nullopt;
 }
 
 
-CollisionInfo CollisionResolver::are_polys_colliding(const Transform2D &loc1, const ConvexPolygonShape2D &poly1,
+std::optional<CollisionInfo> CollisionResolver::are_polys_colliding(const Transform2D &loc1, const ConvexPolygonShape2D &poly1,
                                                      const Transform2D &loc2, const ConvexPolygonShape2D &poly2) {
     std::vector<Vector2D> new_points1(poly1.points);
     auto loc1_applier = [&loc1](Vector2D point) {return loc1 * point;};

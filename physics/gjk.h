@@ -4,8 +4,10 @@
 #include "collision_info.h"
 #include "convex_polygon_shape2d.h"
 
+#include <optional>
+
 namespace gjk {
-    CollisionInfo are_polys_colliding(const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2);
+    std::optional<CollisionInfo> are_polys_colliding(const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2);
 };
 
 #endif // GJK_H

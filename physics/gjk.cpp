@@ -13,7 +13,7 @@ struct ClosestSegmentInfo {
 
 struct PointInfo {
     Vector2D point;
-    int idx;
+    unsigned idx;
 };
 
 struct Edge {
@@ -155,12 +155,12 @@ CollisionInfo get_collision_info(const std::array<Vector2D, 3> &simplex, const C
         }
     }
 
-    return {true, -min_closest_segment_info.normal,
+    return {-min_closest_segment_info.normal,
             find_collision_point(min_closest_segment_info, poly1, poly2) + min_closest_segment_info.normal * min_closest_segment_info.depth,
             min_closest_segment_info.depth};
 }
 
-CollisionInfo are_polys_colliding(const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2) {
+std::optional<CollisionInfo> are_polys_colliding(const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2) {
     bool has_collision = false;
     Vector2D support = get_support(poly1, poly2, Vector2D(1, 0));
 
@@ -231,7 +231,7 @@ CollisionInfo are_polys_colliding(const ConvexPolygonShape2D &poly1, const Conve
     if (has_collision) {
         return get_collision_info(simplex, poly1, poly2);
     } else {
-        return {false, Vector2D(0, 0), Vector2D(0, 0), 0};
+        return std::nullopt;
     }
 }
 
