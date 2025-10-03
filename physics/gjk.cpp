@@ -1,7 +1,8 @@
 #include "gjk.h"
 #include "vector3d.h"
-#include <ranges>
+#include <cstdlib>
 #include <limits>
+#include <array>
 
 namespace gjk
 {
@@ -48,7 +49,7 @@ Vector2D get_support(const ConvexPolygonShape2D &poly1, const ConvexPolygonShape
     return point1_info.point - point2_info.point;
 }
 
-ClosestSegmentInfo find_closest_segment(const std::vector<Vector2D> &polytope, const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2) {
+ClosestSegmentInfo find_closest_segment(const std::vector<Vector2D> &polytope) {
     Vector2D min_normal{0, 0};
     Vector2D surface_point{0, 0};
     float min_depth = std::numeric_limits<float>::max();
@@ -136,12 +137,11 @@ Vector2D find_collision_point(const ClosestSegmentInfo &min_closest_segment_info
  * @return collision info.
  */
 CollisionInfo get_collision_info(const std::array<Vector2D, 3> &simplex, const ConvexPolygonShape2D &poly1, const ConvexPolygonShape2D &poly2) {
-
     std::vector<Vector2D> polytope{std::begin(simplex), std::end(simplex)};
     ClosestSegmentInfo min_closest_segment_info;
 
     while (true) {
-        ClosestSegmentInfo closest_segment_info = find_closest_segment(polytope, poly1, poly2);
+        ClosestSegmentInfo closest_segment_info = find_closest_segment(polytope);
         Vector2D support = get_support(poly1, poly2, closest_segment_info.normal);
 
 
@@ -164,7 +164,7 @@ std::optional<CollisionInfo> are_polys_colliding(const ConvexPolygonShape2D &pol
     bool has_collision = false;
     Vector2D support = get_support(poly1, poly2, Vector2D(1, 0));
 
-    std::array<Vector2D, 3> simplex = {support};
+    std::array<Vector2D, 3> simplex{support};
     unsigned int simplex_size = 1;
 
     Vector2D direction = -support;

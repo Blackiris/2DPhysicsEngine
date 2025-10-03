@@ -3,15 +3,15 @@
 PhysicBody::PhysicBody(const Transform2D &location, const std::shared_ptr<Shape2D> shape, const float &elastic_coeff)
     : location(location), shape(shape), elastic_coeff(elastic_coeff) {}
 
-void PhysicBody::move(const Vector2D &vectorToNewLocation) {
+void PhysicBody::move(const Vector2D &) {
     // Do nothing
 }
 
-void PhysicBody::update_location(const float &delta_time) {
+void PhysicBody::update_location(const float &) {
     // Do nothing
 }
 
-void PhysicBody::apply_impulse(const Vector2D &application_point, const Vector2D &impulse) {
+void PhysicBody::apply_impulse(const Vector2D &, const Vector2D &) {
     // Do nothing
 }
 

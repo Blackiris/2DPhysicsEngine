@@ -34,8 +34,7 @@ float RaylibDisplayBackend::get_frame_time() {
 
 void RaylibDisplayBackend::display_shape(const Transform2D &location, const Shape2D &shape) {
 
-    const CircleShape2D* circle = dynamic_cast<const CircleShape2D*>(&shape);
-    if (circle != nullptr) {
+    if (const CircleShape2D* circle = dynamic_cast<const CircleShape2D*>(&shape)) {
         DrawCircleLines(location.point2d.x, location.point2d.y, circle->r, DARKBLUE);
         DrawLine(location.point2d.x, location.point2d.y,
                  location.point2d.x + circle->r * std::cos(location.rotation_rad),
@@ -43,8 +42,7 @@ void RaylibDisplayBackend::display_shape(const Transform2D &location, const Shap
         return;
     }
 
-    const ConvexPolygonShape2D* convex = dynamic_cast<const ConvexPolygonShape2D*>(&shape);
-    if (convex != nullptr) {
+    if (const ConvexPolygonShape2D* convex = dynamic_cast<const ConvexPolygonShape2D*>(&shape)) {
         std::vector<Vector2> points_rl;
         for (const auto& point: convex->points) {
             const Vector2D new_point = location * point;

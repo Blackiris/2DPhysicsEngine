@@ -95,26 +95,21 @@ std::optional<CollisionInfo> CollisionResolver::are_colliding(const PhysicBody &
 
     const CircleShape2D* circle1 = dynamic_cast<const CircleShape2D*>(&shape1);
     if (circle1 != nullptr) {
-        const CircleShape2D* circle2 = dynamic_cast<const CircleShape2D*>(&shape2);
-        if (circle2 != nullptr) {
+        if (const CircleShape2D* circle2 = dynamic_cast<const CircleShape2D*>(&shape2)) {
             return are_spheres_colliding(location1, *circle1, location2, *circle2);
         }
 
-        const ConvexPolygonShape2D* poly2 = dynamic_cast<const ConvexPolygonShape2D*>(&shape2);
-        if (poly2 != nullptr) {
+        if (const ConvexPolygonShape2D* poly2 = dynamic_cast<const ConvexPolygonShape2D*>(&shape2)) {
             return are_sphere_poly_colliding(location1, *circle1, location2, *poly2);
         }
     } else {
-        const ConvexPolygonShape2D* poly1 = dynamic_cast<const ConvexPolygonShape2D*>(&shape1);
-        if (poly1 != nullptr) {
-            const CircleShape2D* circle2 = dynamic_cast<const CircleShape2D*>(&shape2);
-            if (circle2 != nullptr) {
+        if (const ConvexPolygonShape2D* poly1 = dynamic_cast<const ConvexPolygonShape2D*>(&shape1)) {
+            if (const CircleShape2D* circle2 = dynamic_cast<const CircleShape2D*>(&shape2)) {
                 std::optional<CollisionInfo> coll_info = are_sphere_poly_colliding(location2, *circle2, location1, *poly1);
                 return coll_info.has_value() ? std::make_optional<CollisionInfo>({-coll_info->normal, coll_info->collision_point, coll_info->penetration}) : std::nullopt;
             }
 
-            const ConvexPolygonShape2D* poly2 = dynamic_cast<const ConvexPolygonShape2D*>(&shape2);
-            if (poly2 != nullptr) {
+            if (const ConvexPolygonShape2D* poly2 = dynamic_cast<const ConvexPolygonShape2D*>(&shape2)) {
                 return are_polys_colliding(location1, *poly1, location2, *poly2);
             }
         }
